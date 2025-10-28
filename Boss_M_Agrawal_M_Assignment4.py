@@ -14,11 +14,21 @@ from socket import *
 import sys
 import threading
 
+class User:
+    def __init__(self, user, password, info):
+        self.username = user
+        self.password = password
+        self.info = info
+        self.status = ""
+
+
 GOODBYEMSGFILE = "./goodbye.txt"
 BEFORELOGINMSGFILE = "./prelogin.txt"
 
 beforeLoginMsg = ''
 goodbyeMsg = ''
+
+userList = []
 
 def loadMsgs():
     global beforeLoginMsg
@@ -54,6 +64,17 @@ def mySendAll(sock, data):
         return -1
 
     return 1
+
+#registration function
+
+def register(cmd):
+    global userList
+    word, userName, password = cmd.split(' ')
+    # if user name already exists, do not make a new instance of the class
+    if userName not in userList:
+        listName = User(userName, password)
+        userList.append(listName)
+    # if it doesn't, make new instance
 
 # currently just echoes back what the user has typed
 def processCmd(userName, sock, cmd):
