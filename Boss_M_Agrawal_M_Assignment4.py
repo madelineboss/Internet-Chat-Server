@@ -36,10 +36,7 @@ if (n != 2):
 
 loadMsgs()
 
-"""
-Send all data to sock, return 1 if successful
--1 if failed (socket error)
-"""
+# ensure that all bytes of a message are sent over socket (1 if successful, -1 if failed)
 def mySendAll(sock, data):
     total_sent = 0
     data_length = len(data)
@@ -58,17 +55,21 @@ def mySendAll(sock, data):
 
     return 1
 
+# currently just echoes back what the user has typed
 def processCmd(userName, sock, cmd):
     print(f"process '{cmd}' from {userName}")
 
     # perform according to the cmd, echo for now
     mySendAll(sock, f"Server response to '{cmd}'\n".encode())
 
+# handles a single client connection
 def handleOneClient(sock):
 
+    # send pre-login message
     mySendAll(sock, beforeLoginMsg.encode())
     mySendAll(sock, "Enter your username: ".encode())
 
+    # receive username from client
     data1 = sock.recv(1000)
     if (len(data1) == 0) :
         sock.close()
@@ -77,27 +78,34 @@ def handleOneClient(sock):
     data2 = data1.decode().split(' ')[0]
     userName = data2.replace("\t", " ").replace("\n", "").replace("\r", "")
        
-    
+    # send welcome message
     str = f"Welcome to the Internet Chat Room, {userName}!\n\n"
     mySendAll(sock, str.encode())
 
+    # initialize prompt and enter command loop
     cmdCount = 0
     mySendAll(sock, f"<{userName}:{cmdCount}> ".encode())
     
-    while True:
+    # command loop
+    while True: # waits for command from user
         data = sock.recv(1000)
         if (len(data) == 0):
             print("Client closed connection")
             sock.close()
             break;
 
+        # decodes and cleans the command
         cmd = data.decode().replace("\t", "").replace("\n", "").replace("\r", "")
         tmp = cmd.split()
         command = cmd.split()[0].lower()
+
+        # if the command is quit or exit, send goodbye message and close socket
         if (command == 'quit' or command == 'exit'):
             mySendAll(sock, goodbyeMsg.encode())
             sock.close()
             break
+
+        # else, process the command using processCmd()
         else: 
             processCmd(userName, sock, cmd)
 
@@ -105,6 +113,7 @@ def handleOneClient(sock):
         cmdCount = cmdCount + 1
         mySendAll(sock, f"<{userName}:{cmdCount}> ".encode())
 
+# main server loop
 s = socket()
 h = gethostname()
 print(sys.argv[0], sys.argv[1])
