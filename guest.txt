@@ -1,0 +1,10 @@
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %                                         %
+             %              Welcome to               %
+              %         Internet Chat Server        %
+             %                                        %
+            %                                          %
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+You login as a guest. The only commands that you can use are 
+'register username password', 'exit', and 'quit'.
