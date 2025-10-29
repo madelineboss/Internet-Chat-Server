@@ -19,7 +19,7 @@ class User:
         self.username = user
         self.password = password
         self.info = info
-        self.status = ""
+        self.status = "online"
 
 
 GOODBYEMSGFILE = "./goodbye.txt"
@@ -65,6 +65,32 @@ def mySendAll(sock, data):
 
     return 1
 
+# function to list all online users
+def who():
+    mySendAll(sock, f"{len(userList)} users online:\n\n".encode())
+    for user in userList:
+        userName = f"{user.username} "
+        mySendAll(sock, userName.encode())
+    mySendAll(sock, "\n".encode())
+
+# display user information
+def status(cmd):
+    print("HERE2")
+    username = cmd.split(' ')[1]
+    # if user is self, the format is a little different: if no info, print "-" and also print blocked user(s)
+    user = None
+    for item in userList:
+        if item.username == username:
+            user = item
+            break
+
+    if user is None:
+        mySendAll(sock, f"User {username} does not exist.\n".encode())
+    else:
+        output = f"User: {user.username} \nInfo: {user.info} \n{user.status}"
+        mySendAll(sock, output.encode())
+        mySendAll(sock, "\n".encode())
+
 # registration function
 def register(cmd):
     global userList
@@ -75,27 +101,22 @@ def register(cmd):
         userList.append(listName)
     # if it doesn't, make new instance
 
-# function to list all online users
-def who():
-    global userList
-    print(f"{len(userList)} users online:\n\n")
-    for user in userList:
-        print(user.username)
-
-
-# currently just echoes back what the user has typed
+# processes command
 def processCmd(userName, sock, cmd):
     print(f"process '{cmd}' from {userName}")
 
     command = cmd.split(' ')[0]
 
-    if command == "register":
-        register(cmd)
-    else if command == "who":
+    if command == "who":
         who()
+    elif command == "status":
+        print("HERE")
+        status(cmd)
+    elif command == "register":
+        register(cmd)
 
     # perform according to the cmd, echo for now
-    mySendAll(sock, f"Server response to '{cmd}'\n".encode())
+    # mySendAll(sock, f"Server response to '{cmd}'\n".encode())
 
 # handles a single client connection
 def handleOneClient(sock):
