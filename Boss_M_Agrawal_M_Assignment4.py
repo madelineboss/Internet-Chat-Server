@@ -24,9 +24,11 @@ class User:
 
 GOODBYEMSGFILE = "./goodbye.txt"
 BEFORELOGINMSGFILE = "./prelogin.txt"
+AFTERLOGINMSGFILE = "./afterlogin.txt"
 
 beforeLoginMsg = ''
 goodbyeMsg = ''
+afterLogin =''
 
 userList = []
 
@@ -38,6 +40,8 @@ def loadMsgs():
         beforeLoginMsg = f.read()
     with open(GOODBYEMSGFILE, "r") as f:
         goodbyeMsg = f.read()
+    with open(AFTERLOGINMSGFILE, "r") as f:
+        afterLogin = f.read()
                 
 n = len(sys.argv)
 if (n != 2):
@@ -65,6 +69,7 @@ def mySendAll(sock, data):
 
     return 1
 
+<<<<<<< Updated upstream
 # function to list all online users
 def who():
     mySendAll(sock, f"{len(userList)} users online:\n\n".encode())
@@ -92,14 +97,31 @@ def status(cmd):
         mySendAll(sock, "\n".encode())
 
 # registration function
+=======
+#function to find if username already exists
+def findUser(user):
+    global userList
+    for usern in userList:
+        if usern.userName == user:
+            return True
+    return False
+        
+#registration function
+>>>>>>> Stashed changes
 def register(cmd):
     global userList
     word, userName, password = cmd.split(' ')
-    # if user name already exists, do not make a new instance of the class
-    if userName not in userList:
-        listName = User(userName, password)
-        userList.append(listName)
-    # if it doesn't, make new instance
+    # if user name does not exist, create a new instance and add it to the list of user instances
+    flag = findUser(userName)
+    if flag == False:
+       instance = User(userName, password)
+       userList.append(instance)
+    #if not, tell guest that the user is taken
+    else:
+        print("Username taken")
+
+
+
 
 # processes command
 def processCmd(userName, sock, cmd):
@@ -137,6 +159,8 @@ def handleOneClient(sock):
     # send welcome message
     str = f"Welcome to the Internet Chat Room, {userName}!\n\n"
     mySendAll(sock, str.encode())
+
+    mySendAll(sock, afterLogin.encode())
 
     # initialize prompt and enter command loop
     cmdCount = 0
