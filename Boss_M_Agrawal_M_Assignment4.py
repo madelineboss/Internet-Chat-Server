@@ -72,7 +72,7 @@ userHolding = ''
 userList = []
 roomList = []
 nextRoom = 1
-onlineUsers = []
+onlineUsers = {}
 
 # load list of registered users
 def loadUsers():
@@ -167,11 +167,10 @@ def isUserOnline(username):
 #-----Chat Command Functions---------------------------------------------------------------------------------------#
 
 # function to list all online users
-def who():
-    mySendAll(sock, f"{len(userList)} users online:\n\n".encode())
-    for user in userList:
-        userName = f"{user.username} "
-        mySendAll(sock, userName.encode())
+def who(sock):
+    mySendAll(sock, f"{len(onlineUsers)} users online:\n".encode())
+    for user in onlineUsers:
+        mySendAll(sock, f"{user} ".encode())
     mySendAll(sock, "\n".encode())
 
 # display user information
@@ -291,12 +290,13 @@ def block(cmd):
 
 
 #help function to display all possible commands
-def help():
+def help(sock):
     mySendAll(sock, afterLoginMsg.encode())
 
 # registration function
 def register(cmd):
     global userList
+    global onlineUsers
     word, userName, password = cmd.split(' ')
 
     flag = findUser(userName) #check if username exists
@@ -312,7 +312,7 @@ def register(cmd):
     else:
         mySendAll(sock, f"Sorry, username '{userName}' is taken.\n".encode())
 
-    mySendAll(sock, afterLoginMsg.encode())
+    mySendAll(sock, guestMsg.encode())
 
 
 #------Process Commands------------------------------------------------------------------------------------------------#
@@ -322,7 +322,7 @@ def processCmd(userName, sock, cmd):
     command = cmd.split(' ')[0]
 
     if command == "who":
-        who()
+        who(sock)
     elif command == "status":
         status(cmd)
     elif command == "start":
@@ -334,7 +334,7 @@ def processCmd(userName, sock, cmd):
     elif command == "leave":
         leave(cmd, userName)
     elif command == "help":
-        help()
+        help(sock)
     elif command == "register":
         register(cmd)
 
@@ -374,6 +374,7 @@ def handleOneClient(sock):
 
             # send welcome message
             str = f"Welcome to the Internet Chat Room, {userName}!\n\n"
+            onlineUsers[userName] = sock
             mySendAll(sock, str.encode())
 
 
@@ -398,6 +399,9 @@ def handleOneClient(sock):
 
                 # if the command is quit or exit, send goodbye message and close socket
                 if (command == 'quit' or command == 'exit'):
+                    if userName in onlineUsers:
+                        del onlineUsers[userName]
+
                     mySendAll(sock, goodbyeMsg.encode())
                     sock.close()
                     break
