@@ -264,7 +264,17 @@ def leave(cmd, userName):
                 room.members.remove(userName)
                 mySendAll(sock, f"You left Room {roomNum}.\n".encode())
 
-def tell(userName, sock, cmd):
+def shout(sock, cmd, userName):
+    parts = cmd.split(' ', 1)
+    word, message = parts
+    if len(parts) < 2:
+        mySendAll(sock, f"Usage: shout <message>.\n".encode())
+
+    else:
+        for userSock in onlineUsers.values():
+            mySendAll(userSock, f"\n!!{userName}!!: {message}\n".encode())
+
+def tell(userName, sock, cmd, cmdCount):
     parts = cmd.split(' ', 2)
     if len(parts) < 3:
         mySendAll(sock, f"Usage: tell <user> <message>.\n".encode())
@@ -273,17 +283,12 @@ def tell(userName, sock, cmd):
         for user in onlineUsers:
             if user == target:
                 userSock = onlineUsers[target]
-                mySendAll(userSock, f"From <{userName}>: {message}\n".encode())
+                mySendAll(userSock, f"{userName}: {message}\n".encode())
             
         if target not in onlineUsers:
             mySendAll(sock, "User is not online.\n".encode())
 
-    mySendAll(sock, afterLoginMsg.encode())
-            
-        
-        
-
-
+    
 
 """
 def block(cmd):
@@ -335,7 +340,7 @@ def register(cmd):
 
 
 #------Process Commands------------------------------------------------------------------------------------------------#
-def processCmd(userName, sock, cmd):
+def processCmd(userName, sock, cmd, cmdCount):
     print(f"process '{cmd}' from {userName}")
 
     command = cmd.split(' ')[0]
@@ -356,8 +361,11 @@ def processCmd(userName, sock, cmd):
         help(sock)
     elif command == "register":
         register(cmd)
+    elif command == "shout":
+        shout(sock, cmd, userName)
     elif command == "tell":
-        tell(userName, sock, cmd)
+        tell(userName, sock, cmd, cmdCount)
+        
 
     # perform according to the cmd, echo for now
     # mySendAll(sock, f"Server response to '{cmd}'\n".encode())
@@ -396,6 +404,8 @@ def handleOneClient(sock):
             # send welcome message
             str = f"Welcome to the Internet Chat Room, {userName}!\n\n"
             onlineUsers[userName] = sock
+            userObj = getUser(userName)
+            userObj.status = "online"
             mySendAll(sock, str.encode())
 
 
@@ -432,7 +442,7 @@ def handleOneClient(sock):
 
                 # else, process the command using processCmd()
                 else: 
-                    processCmd(userName, sock, cmd)
+                    processCmd(userName, sock, cmd, cmdCount)
 
                 # send prompt
                 cmdCount = cmdCount + 1
