@@ -27,6 +27,7 @@ other:
     - if i open two different terminals on my machine, any command i run will only be run from the most recent terminal I opened
     - add rooms and blocked users to user class
     - figure out how to reuse room numbers
+    - figure out how to know who the current user is
 
 """
 
@@ -41,7 +42,11 @@ class User:
         self.username = user
         self.password = password
         self.info = info
+        self.blocked = []
         self.status = "online"
+
+    def get_blocked(self):
+        return self.blocked
 
 class Room:
     def __init__(self, roomNum, topic, leader):
@@ -235,6 +240,28 @@ def leave(cmd, userName):
             else:
                 room.members.remove(userName)
                 mySendAll(sock, f"You left Room {roomNum}.\n".encode())
+
+"""
+def block(cmd):
+    parts = cmd.split()
+    if len(parts) < 2:
+        mySendAll(sock, f"Usage: block <user>.\n".encode())
+    else:
+        target = parts[1]
+        current = next((u for u in userList if u.username == userName), None)
+
+        if current is None:
+            mySendAll(sock, f"Error: current user nout found.\n".encode())
+
+        else:
+            blockedList = current.get_blocked()
+
+            if target in blockedList:
+                mySendAll(sock, f"User {target} is already blocked.\n".encode())
+            else:
+                blockedList.append(target)
+                mySendAll(sock, f"Users {target} has been blocked.\n")
+"""
 
 
 #help function to display all possible commands
