@@ -72,6 +72,7 @@ userHolding = ''
 userList = []
 roomList = []
 nextRoom = 1
+onlineUsers = []
 
 # load list of registered users
 def loadUsers():
@@ -148,6 +149,20 @@ def correctPassword(username, password):
                 return True
     return False
 
+#function to find if user is listed as online
+"""
+def isUserOnline(username):
+    online = False
+    for user in onlineUsers:
+        if user.username == username:
+            online = True
+        else:
+            online = False
+    
+    return online
+
+#this can be further implemented in the login and exit/quit functions.
+"""
 
 #-----Chat Command Functions---------------------------------------------------------------------------------------#
 
@@ -240,6 +255,17 @@ def leave(cmd, userName):
             else:
                 room.members.remove(userName)
                 mySendAll(sock, f"You left Room {roomNum}.\n".encode())
+
+"""
+def tell(cmd):
+    parts = cmd.split(' ')
+    if len(parts) < 3:
+        mySendAll(sock, f"Usage: tell <user> <message>.\n".encode)
+    else:
+        
+        
+
+"""
 
 """
 def block(cmd):
