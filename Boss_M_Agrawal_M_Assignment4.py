@@ -264,16 +264,26 @@ def leave(cmd, userName):
                 room.members.remove(userName)
                 mySendAll(sock, f"You left Room {roomNum}.\n".encode())
 
-"""
-def tell(cmd):
-    parts = cmd.split(' ')
+def tell(sock, cmd):
+    parts = cmd.split(' ', 2)
     if len(parts) < 3:
-        mySendAll(sock, f"Usage: tell <user> <message>.\n".encode)
+        mySendAll(sock, f"Usage: tell <user> <message>.\n".encode())
     else:
+        word, target, message = parts
+        for user in onlineUsers:
+            if user == target:
+                userSock = onlineUsers[target]
+                print(f"{message}")
+                mySendAll(userSock, message.encode())
+            else:
+                mySendAll(sock, "User is is not online.\n".encode())
+
+    mySendAll(sock, afterLoginMsg.encode())
+            
         
         
 
-"""
+
 
 """
 def block(cmd):
@@ -346,6 +356,8 @@ def processCmd(userName, sock, cmd):
         help(sock)
     elif command == "register":
         register(cmd)
+    elif command == "tell":
+        tell(sock, cmd)
 
     # perform according to the cmd, echo for now
     # mySendAll(sock, f"Server response to '{cmd}'\n".encode())
