@@ -27,7 +27,7 @@ import os
 #------Classes----------------------------------------------------------------------------------------------------------#
 
 class User:
-    def __init__(self, user, password, info = ""):
+    def __init__(self, user, password):
         self.username = user
         self.password = password
         self.info = "-"
@@ -49,8 +49,8 @@ GOODBYEMSGFILE = "./goodbye.txt"
 BEFORELOGINMSGFILE = "./prelogin.txt"
 AFTERLOGINMSGFILE = "./afterlogin.txt"
 GUESTMSG = "./guest.txt"
-USERLOG = "./userFile.txt"
-USERSDB = "./users.json"
+USERJLOG = "./users.json"
+
 
 
 beforeLoginMsg = ''
@@ -67,51 +67,51 @@ blockedList = []
 userDB = {}
 
 
+"""
 # load list of registered users
 def loadUsers():
     global userList
     with open(USERLOG, "r") as f:
         for line in f:
-            parts = line.strip().split(' ', 2)
+            parts = line.strip().split(' ',2)
             if len(parts) >= 2:
                 user = User(parts[0], parts[1])
-                if len(parts) == 3:
+                if len(parts) >= 3:
                     user.info = parts[2]
                 userList.append(user)
-
 """
-def loadUsers():
+
+def saveUsersToJSON():
+    data = {}
+    for u in userList:
+        data[u.username] = {
+            "password": u.password, 
+            "info": u.info, 
+            "blocked": u.blocked
+        }
+
+    with open(USERJLOG, "w") as f:
+        json.dump(data, f, indent = 4)
+
+def loadUsersFromJSON():
     global userList
-
-    if not os.path.exists(USERSDB):
+    if not os.path.exists(USERJLOG):
         return
-
-    with open(USERSDB, "r") as f:
-        data = json.load(f)
+    
+    with open(USERJLOG, "r") as f:
+        try:
+            data = json.load(f)
+        except json.JSONDecodeError:
+            data = {}
 
     for username, info in data.items():
-        user = User(username, info["password"])
-        user.info = info.get("info", "-")
-        user.blocked = info.get("blocked", [])
-        user.status = info.get("status", "offline")
-        userList.append(user)
+        u = User(username, info["password"])
+        u.info = info.get("info", "-")
+        u.blocked = info.get("blocked", [])
 
-    else:
-        usersDB = {}
+        userList.append(u)
 
 
-def saveUsers():
-    data = {}
-    for user in userList:
-        data[user.username] = {
-            "info": user.info,
-            "blocked": user.blocked,
-            "status": user.status
-        }
-    
-    with open(USERSDB, "w") as f:
-        json.dump(data, f, indent = 4)
-"""
 
 def loadMsgs():
     global beforeLoginMsg
@@ -134,7 +134,7 @@ if (n != 2):
     exit()
 
 loadMsgs()
-loadUsers()
+loadUsersFromJSON()
 
 #-----Send All Function (Provided)-----------------------------------------------------------------------------------#
 
@@ -325,6 +325,7 @@ def info(sock, cmd, userName):
         if len(parts) == 2:
             word, message = parts
             userObj.info = message
+            saveUsersToJSON()
             mySendAll(sock, "Your info has been updated.\n".encode())
         else:
             mySendAll(sock, f"Info: {userObj.info}\n".encode())
@@ -402,7 +403,7 @@ def block(sock, cmd, userName):
                 print("Check if target in blockedlist")
             else:
                 blockedList.append(target)
-                print("Check append target to blocked list")
+                saveUsersToJSON()
                 mySendAll(sock, f"Users {target} has been blocked.\n".encode())
 
 #help function to display all possible commands
@@ -416,7 +417,6 @@ def help(sock, cmd):
 # registration function
 def register(sock, cmd):
     global userList
-    global onlineUsers
 
     parts = cmd.split(' ')
     if len(parts) != 3:
@@ -426,13 +426,17 @@ def register(sock, cmd):
     userName = parts[1]
     password = parts[2]
 
+
     flag = findUser(userName) #check if username exists
     if flag == False: #if does not exist, create instance
         instance = User(userName, password)
         userList.append(instance)
 
+        saveUsersToJSON()
+        """
         with open(USERLOG, "a") as f: 
             f.write(f"{userName} {password}\n")
+        """
 
         mySendAll(sock, f"User {userName} registered\n".encode())
     #if not, tell guest
@@ -601,6 +605,7 @@ def gethostname():
 s = socket.socket()
 h = gethostname()
 print(sys.argv[0], sys.argv[1])
+
 
 s.bind((h, int(sys.argv[1])))
 s.listen(5)
