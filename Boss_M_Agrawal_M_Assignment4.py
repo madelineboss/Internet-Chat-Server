@@ -36,8 +36,6 @@ class User:
         self.rooms = []
         self.status = "online"
 
-    def get_blocked(self):
-        return self.blocked
 
 class Room:
     def __init__(self, roomNum, topic, leader):
@@ -64,6 +62,7 @@ userList = []
 roomList = []
 nextRoom = 1
 onlineUsers = {}
+blockedList = []
 
 # load list of registered users
 def loadUsers():
@@ -195,7 +194,7 @@ def status(sock, cmd):
     if user is None:
         mySendAll(sock, f"User {username} does not exist.\n".encode())
     else:
-        output = f"User: {user.username} \nInfo: {user.info} \n{user.status}"
+        output = f"User: {user.username} \nInfo: {user.info} \nBlocked User(s): {user.blocked} \n{user.status}"
         mySendAll(sock, output.encode())
         mySendAll(sock, "\n".encode())
 
@@ -358,27 +357,30 @@ def say(sock, cmd, userName):
                     mySendAll(userSock, f"[Room {roomNum}] *{userName}*: {message}\n".encode())
     
 
-"""
-def block(cmd):
+
+def block(sock, cmd, userName):
     parts = cmd.split()
     if len(parts) < 2:
         mySendAll(sock, f"Usage: block <user>.\n".encode())
     else:
         target = parts[1]
-        current = next((u for u in userList if u.username == userName), None)
+        userObj = getUser(userName)
 
-        if current is None:
+        if userObj is None:
             mySendAll(sock, f"Error: current user nout found.\n".encode())
 
         else:
-            blockedList = current.get_blocked()
+            blockedList = userObj.blocked
+            print("Check")
 
             if target in blockedList:
                 mySendAll(sock, f"User {target} is already blocked.\n".encode())
+                print("Check if target in blockedlist")
             else:
                 blockedList.append(target)
-                mySendAll(sock, f"Users {target} has been blocked.\n")
-"""
+                print("Check append target to blocked list")
+                mySendAll(sock, f"Users {target} has been blocked.\n".encode())
+
 
 
 #help function to display all possible commands
@@ -446,8 +448,12 @@ def processCmd(userName, sock, cmd, cmdCount):
         register(sock, cmd)
     elif command == "shout":
         shout(sock, cmd, userName)
+    elif command == "block":
+        block(sock, cmd, userName)
     elif command == "tell":
         tell(userName, sock, cmd, cmdCount)
+    else:
+        mySendAll(sock, "Sorry, that command is not supported.".encode())
 
 
 #------Handle a Single Client Connection----------------------------------------------------------------------------------#
