@@ -82,14 +82,35 @@ def loadUsers():
 """
 def loadUsers():
     global userList
-    global blockedList
 
-    if os.path.exists(USERSDB):
-        with open(USERSDB, "r") as f:
-            USERSDB = json.load(f)
+    if not os.path.exists(USERSDB):
+        return
+
+    with open(USERSDB, "r") as f:
+        data = json.load(f)
+
+    for username, info in data.items():
+        user = User(username, info["password"])
+        user.info = info.get("info", "-")
+        user.blocked = info.get("blocked", [])
+        user.status = info.get("status", "offline")
+        userList.append(user)
 
     else:
         usersDB = {}
+
+
+def saveUsers():
+    data = {}
+    for user in userList:
+        data[user.username] = {
+            "info": user.info,
+            "blocked": user.blocked,
+            "status": user.status
+        }
+    
+    with open(USERSDB, "w") as f:
+        json.dump(data, f, indent = 4)
 """
 
 def loadMsgs():
