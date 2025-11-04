@@ -69,7 +69,7 @@ onlineUsers = {}
 blockedList = []
 userDB = {}
 
-"""
+
 # load list of registered users
 def loadUsers():
     global userList
@@ -81,8 +81,8 @@ def loadUsers():
                 if len(parts) == 3:
                     user.info = parts[2]
                 userList.append(user)
-"""
 
+"""
 def loadUsers():
     global userList
     global blockedList
@@ -93,7 +93,7 @@ def loadUsers():
 
     else:
         usersDB = {}
-
+"""
 
 def loadMsgs():
     global beforeLoginMsg
