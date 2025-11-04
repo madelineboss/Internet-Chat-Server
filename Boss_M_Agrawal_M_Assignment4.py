@@ -67,19 +67,6 @@ blockedList = []
 userDB = {}
 
 
-"""
-# load list of registered users
-def loadUsers():
-    global userList
-    with open(USERLOG, "r") as f:
-        for line in f:
-            parts = line.strip().split(' ',2)
-            if len(parts) >= 2:
-                user = User(parts[0], parts[1])
-                if len(parts) >= 3:
-                    user.info = parts[2]
-                userList.append(user)
-"""
 
 def saveUsersToJSON():
     data = {}
@@ -392,7 +379,7 @@ def block(sock, cmd, userName):
         userObj = getUser(userName)
 
         if userObj is None:
-            mySendAll(sock, f"Error: current user nout found.\n".encode())
+            mySendAll(sock, f"Error: current user not found.\n".encode())
 
         else:
             blockedList = userObj.blocked
@@ -405,6 +392,27 @@ def block(sock, cmd, userName):
                 blockedList.append(target)
                 saveUsersToJSON()
                 mySendAll(sock, f"Users {target} has been blocked.\n".encode())
+
+def unblock(sock, cmd, userName):
+    parts = cmd.split()
+    if len(parts) < 2:
+        mySendAll(sock, "Usage: block <user>.\n".encode())
+    else:
+        target = parts[1]
+        userObj = getUser(userName)
+
+        if userObj is None:
+            mySendAll(sock, f"Error: current user not found.\n".encode())
+        else:
+            blockedList = userObj.blocked
+
+            if target in blockedList:
+                blockedList.remove(target)
+                saveUsersToJSON()
+                mySendAll(sock, f"User {target} is unblocked.\n".encode())
+            else:
+                mySendAll(sock, f"Cannot unblock user {target} because user was not blocked.\n".encode())
+
 
 #help function to display all possible commands
 def help(sock, cmd):
@@ -433,10 +441,6 @@ def register(sock, cmd):
         userList.append(instance)
 
         saveUsersToJSON()
-        """
-        with open(USERLOG, "a") as f: 
-            f.write(f"{userName} {password}\n")
-        """
 
         mySendAll(sock, f"User {userName} registered\n".encode())
     #if not, tell guest
@@ -473,6 +477,8 @@ def processCmd(userName, sock, cmd, cmdCount):
         shout(sock, cmd, userName)
     elif command == "block":
         block(sock, cmd, userName)
+    elif command == "unblock":
+        unblock(sock, cmd, userName)
     elif command == "tell":
         tell(userName, sock, cmd, cmdCount)
     else:
