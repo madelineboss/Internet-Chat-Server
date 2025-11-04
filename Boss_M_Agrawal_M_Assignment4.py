@@ -324,9 +324,16 @@ def shout(sock, cmd, userName):
         return
 
     word, message = parts
+    userObj = getUser(userName)
+    blockedUsers = userObj.blocked
 
-    for userSock in onlineUsers.values():
-        mySendAll(userSock, f"\n!!{userName}!!: {message}\n".encode())
+    for receiverUser, receiverSock, in onlineUsers.items():
+        receiverObj = getUser(receiverUser)
+        receiverBlocked = receiverObj.blocked
+
+        if receiverUser not in blockedUsers and userName not in receiverBlocked:
+            mySendAll(receiverSock, f"\n!!{userName}!!: {message}\n".encode())
+                
 
 # send a message to a specific user
 def tell(userName, sock, cmd, cmdCount):
