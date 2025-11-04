@@ -419,8 +419,6 @@ def register(sock, cmd):
     else:
         mySendAll(sock, f"Sorry, username '{userName}' is taken.\n".encode())
 
-    mySendAll(sock, guestMsg.encode())
-
 
 #------Process Commands------------------------------------------------------------------------------------------------#
 def processCmd(userName, sock, cmd, cmdCount):
@@ -455,7 +453,7 @@ def processCmd(userName, sock, cmd, cmdCount):
     elif command == "tell":
         tell(userName, sock, cmd, cmdCount)
     else:
-        mySendAll(sock, "Sorry, that command is not supported.".encode())
+        mySendAll(sock, "Sorry, that command is not supported.\n".encode())
 
 
 #------Handle a Single Client Connection----------------------------------------------------------------------------------#
@@ -569,7 +567,7 @@ def handleOneClient(sock):
 
             elif command == "register":
                 register(sock, cmd)
-                
+
             else:
                 mySendAll(sock, guestMsg.encode())
 
