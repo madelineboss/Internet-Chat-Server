@@ -31,7 +31,7 @@ class User:
     def __init__(self, user, password, info = ""):
         self.username = user
         self.password = password
-        self.info = info
+        self.info = "-"
         self.blocked = []
         self.rooms = []
         self.status = "online"
@@ -292,6 +292,19 @@ def leave(sock, cmd, userName):
                 userObj.rooms.remove(room)
                 mySendAll(sock, f"You left Room {roomNum}.\n".encode())
 
+#function to allow users to add info to their profile
+def info(sock, cmd, userName):
+    parts = cmd.split(' ', 1)
+    word, message = parts
+
+    if len(parts) < 2:
+        mySendAll(sock, "Usage: info <message>.\n".encode())
+    
+    else:
+        userObj = getUser(userName)
+        userObj.info = message
+        mySendAll(sock, "Your info has been updated.\n".encode())
+
 # broadcast a message to everyone online
 def shout(sock, cmd, userName):
     parts = cmd.split(' ', 1)
@@ -427,6 +440,8 @@ def processCmd(userName, sock, cmd, cmdCount):
         say(sock, cmd, userName)
     elif command == "help":
         help(sock, cmd)
+    elif command == "info":
+        info(sock, cmd, userName)
     elif command == "register":
         register(sock, cmd)
     elif command == "shout":
