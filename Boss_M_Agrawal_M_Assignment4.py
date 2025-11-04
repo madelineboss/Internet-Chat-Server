@@ -17,11 +17,8 @@ block <user>
 unblock <user>
 
 other:
-    - add error messages for the commands if not enough arguments are entered, or if the arguments are not in correct format
     - the !!system!! messages need to be broadcast to everyone, not just the current user
     - figure out how to reuse room numbers
-    - figure out how to know who the current user is
-
 """
 
 import socket
@@ -169,7 +166,12 @@ def getUser(username):
 #-----Chat Command Functions---------------------------------------------------------------------------------------#
 
 # function to list all online users
-def who(sock):
+def who(sock, cmd):
+    parts = cmd.split(' ')
+    if len(parts) > 1:
+        mySendAll(sock, f"Usage: who\n".encode())
+        return
+
     mySendAll(sock, f"{len(onlineUsers)} users online:\n".encode())
     for user in onlineUsers:
         mySendAll(sock, f"{user} ".encode())
@@ -177,7 +179,12 @@ def who(sock):
 
 # display user information
 def status(sock, cmd):
-    username = cmd.split(' ')[1]
+    parts = cmd.split(' ')
+    if len(parts) > 2:
+        mySendAll(sock, f"Usage: status [user]\n".encode())
+        return
+
+    username = parts[1]
     # if user is self, the format is a little different: if no info, print "-" and also print blocked user(s)
     user = None
     for item in userList:
@@ -193,11 +200,16 @@ def status(sock, cmd):
         mySendAll(sock, "\n".encode())
 
 # start room for a topic
-def start(cmd, userName):
+def start(sock, cmd, userName):
     global roomList
     global nextRoom
 
-    topic = cmd.split(' ')[1]
+    parts = cmd.split(' ', 1)
+    if len(parts) != 2:
+        mySendAll(sock, f"Usage: start <topic>\n".encode())
+        return
+
+    topic = parts[1]
     roomNum = nextRoom
     nextRoom += 1
 
@@ -209,7 +221,12 @@ def start(cmd, userName):
     mySendAll(sock, f"!!system!!: {instance.leader} created room {instance.roomNum}, topic: {instance.topic}\n".encode())
 
 # list all rooms
-def rooms():
+def rooms(sock, cmd):
+    parts = cmd.split(' ')
+    if len(parts) > 1:
+        mySendAll(sock, f"Usage: rooms\n".encode())
+        return
+
     if not roomList:
         mySendAll(sock, "No active rooms\n".encode())
     else:
@@ -219,8 +236,13 @@ def rooms():
             mySendAll(sock, message.encode())
 
 # join a room
-def join(cmd, userName):
-    roomNum = int(cmd.split(' ')[1])
+def join(sock, cmd, userName):
+    parts = cmd.split(' ')
+    if len(parts) != 2 or not parts[1].isdigit():
+        mySendAll(sock, f"Usage: join <room_number>\n".encode())
+        return
+
+    roomNum = int(parts[1])
 
     room = None
     for r in roomList:
@@ -239,9 +261,15 @@ def join(cmd, userName):
             mySendAll(sock, f"You joined Room {roomNum}.\n".encode())
 
 # leave a room
-def leave(cmd, userName):
+def leave(sock, cmd, userName):
     global roomList
-    roomNum = int(cmd.split(' ')[1])
+
+    parts = cmd.split(' ')
+    if len(parts) != 2 or not parts[1].isdigit():
+        mySendAll(sock, f"Usage: leave <room_number>\n".encode())
+        return
+
+    roomNum = int(parts[1])
 
     room = None
     for r in roomList:
@@ -267,13 +295,14 @@ def leave(cmd, userName):
 # broadcast a message to everyone online
 def shout(sock, cmd, userName):
     parts = cmd.split(' ', 1)
-    word, message = parts
     if len(parts) < 2:
         mySendAll(sock, f"Usage: shout <message>.\n".encode())
+        return
 
-    else:
-        for userSock in onlineUsers.values():
-            mySendAll(userSock, f"\n!!{userName}!!: {message}\n".encode())
+    word, message = parts
+
+    for userSock in onlineUsers.values():
+        mySendAll(userSock, f"\n!!{userName}!!: {message}\n".encode())
 
 # send a message to a specific user
 def tell(userName, sock, cmd, cmdCount):
@@ -295,25 +324,25 @@ def say(sock, cmd, userName):
     parts = cmd.split(' ', 2)
     if len(parts) < 3:
         mySendAll(sock, f"Usage: say <room_number> <Msg>\n".encode())
+        return
+    
+    roomNum = int(parts[1])
+    message = parts[2]
+
+    room = None
+    for r in roomList:
+        if r.roomNum == roomNum:
+            room = r
+    if room is None:
+        mySendAll(sock, f"Room {roomNum} does not exist.\n".encode())
     else:
-        roomNum = int(parts[1])
-        message = parts[2]
-
-        room = None
-        for r in roomList:
-            if r.roomNum == roomNum:
-                room = r
-        if room is None:
-            mySendAll(sock, f"Room {roomNum} does not exist.\n".encode())
+        if userName not in room.members:
+            mySendAll(sock, f"You are not in Room {roomNum}.\n".encode())
         else:
-            if userName not in room.members:
-                mySendAll(sock, f"You are not in Room {roomNum}.\n".encode())
-            else:
-
-                for user in room.members:
-                    if user in onlineUsers:
-                        userSock = onlineUsers[user]
-                        mySendAll(userSock, f"[Room {roomNum}] *{userName}*: {message}\n".encode())
+            for user in room.members:
+                if user in onlineUsers:
+                    userSock = onlineUsers[user]
+                    mySendAll(userSock, f"[Room {roomNum}] *{userName}*: {message}\n".encode())
     
 
 """
@@ -340,14 +369,25 @@ def block(cmd):
 
 
 #help function to display all possible commands
-def help(sock):
+def help(sock, cmd):
+    parts = cmd.split(' ')
+    if len(parts) > 1:
+        mySendAll(sock, f"Usage: help\n".encode())
+        return
     mySendAll(sock, afterLoginMsg.encode())
 
 # registration function
-def register(cmd):
+def register(sock, cmd):
     global userList
     global onlineUsers
-    word, userName, password = cmd.split(' ')
+
+    parts = cmd.split(' ')
+    if len(parts) != 3:
+        mySendAll(sock, f"Usage: register <user> <passwd>\n".encode())
+        return
+
+    userName = parts[1]
+    password = parts[2]
 
     flag = findUser(userName) #check if username exists
     if flag == False: #if does not exist, create instance
@@ -372,31 +412,28 @@ def processCmd(userName, sock, cmd, cmdCount):
     command = cmd.split(' ')[0]
 
     if command == "who":
-        who(sock)
+        who(sock, cmd)
     elif command == "status":
         status(sock, cmd)
     elif command == "start":
-        start(cmd, userName)
+        start(sock, cmd, userName)
     elif command == "rooms":
-        rooms()
+        rooms(sock, cmd)
     elif command == "join":
-        join(cmd, userName)
+        join(sock, cmd, userName)
     elif command == "leave":
-        leave(cmd, userName)
+        leave(sock, cmd, userName)
     elif command == "say":
         say(sock, cmd, userName)
     elif command == "help":
-        help(sock)
+        help(sock, cmd)
     elif command == "register":
-        register(cmd)
+        register(sock, cmd)
     elif command == "shout":
         shout(sock, cmd, userName)
     elif command == "tell":
         tell(userName, sock, cmd, cmdCount)
-        
 
-    # perform according to the cmd, echo for now
-    # mySendAll(sock, f"Server response to '{cmd}'\n".encode())
 
 #------Handle a Single Client Connection----------------------------------------------------------------------------------#
 def handleOneClient(sock):
@@ -508,9 +545,8 @@ def handleOneClient(sock):
                 break
 
             elif command == "register":
-                register(cmd)
+                register(sock, cmd)
                 
-
             else:
                 mySendAll(sock, guestMsg.encode())
 
