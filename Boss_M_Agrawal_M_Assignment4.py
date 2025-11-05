@@ -203,7 +203,7 @@ def status(sock, cmd, userName):
         output = f"User: {userObj.username} \nInfo: {userObj.info} \nBlocked User(s): {userObj.blocked} \n{userObj.status}\n"
         mySendAll(sock, output.encode())
     else:
-        output = f"User: {userObj.username} \nInfo: {userObj.info} \n{userObj.status}\n"
+        output = f"User: {userObj.username} \nInfo: {userObj.info} \nBlocked User(s): {userObj.blocked} \n{userObj.status}\n"
         mySendAll(sock, output.encode())
 
 # start room for a topic
@@ -316,49 +316,46 @@ def info(sock, cmd, userName):
         else:
             mySendAll(sock, f"Info: {userObj.info}\n".encode())
 
+
 # broadcast a message to everyone online
 def shout(sock, cmd, userName):
-    parts = cmd.split(' ', 1)
+    parts = cmd.split(" ", 1)
     if len(parts) < 2:
-        mySendAll(sock, f"Usage: shout <message>.\n".encode())
+        mySendAll(sock, "Usage: shout <message>.\n".encode())
         return
-
+    
     word, message = parts
-    userObj = getUser(userName)
-    blockedUsers = userObj.blocked
-
-    for receiverUser, receiverSock, in onlineUsers.items():
+    for receiverUser, receiverSock in onlineUsers.items():
         receiverObj = getUser(receiverUser)
-        receiverBlocked = receiverObj.blocked
 
-        if receiverUser not in blockedUsers and userName not in receiverBlocked:
-            mySendAll(receiverSock, f"\n!!{userName}!!: {message}\n".encode())
-                
+        if userName in receiverObj.blocked:
+            continue
+
+        mySendAll(receiverSock, f"\n!!{userName}!!: {message}\n".encode())
+     
+
 
 # send a message to a specific user
-def tell(userName, sock, cmd, cmdCount):
+def tell(sock, cmd, userName):
     parts = cmd.split(' ', 2)
     if len(parts) < 3:
         mySendAll(sock, f"Usage: tell <user> <message>.\n".encode())
-    else:
-        word, target, message = parts
-        currentObj = getUser(userName)
-        targetObj = getUser(target)
-        currBlockList = currentObj.blocked
-        targBlockList = targetObj.blocked
-        for user in onlineUsers:
-            if user == target and target not in currBlockList and userName not in targBlockList:
-                userSock = onlineUsers[target]
-                mySendAll(userSock, f"{userName}: {message}\n".encode())
-            elif user == target and target in currBlockList:
-                mySendAll(sock, f"Cannot send message, you have blocked user {target}.\n".encode())
+        return
+    
+    word, target, message = parts
 
-            elif user == target and userName in targBlockList:
-                mySendAll(sock, f"Cannot send message, user {target} blocked you.\n".encode())
-           
-            
-        if target not in onlineUsers:
-            mySendAll(sock, "User is not online.\n".encode())
+    if target not in onlineUsers:
+        mySendAll(sock, "User is not online.\n".encode())
+        return
+    
+    targetObj = getUser(target)
+
+    if userName in targetObj.blocked:
+        mySendAll(sock, f"You have been blocked by {target}.\n".encode())
+        return
+    
+    userSock = onlineUsers[target]
+    mySendAll(userSock, f"{userName}: {message}\n".encode())
 
 # send a message to everyone in a room
 def say(sock, cmd, userName):
@@ -496,14 +493,14 @@ def processCmd(userName, sock, cmd, cmdCount):
     elif command == "unblock":
         unblock(sock, cmd, userName)
     elif command == "tell":
-        tell(userName, sock, cmd, cmdCount)
+        tell(sock, cmd, userName)
     else:
         mySendAll(sock, "Sorry, that command is not supported.\n".encode())
 
 
 #------Handle a Single Client Connection----------------------------------------------------------------------------------#
 def handleOneClient(sock):
-
+ 
     # send pre-login message
     mySendAll(sock, beforeLoginMsg.encode())
     mySendAll(sock, "Enter your username: ".encode())
