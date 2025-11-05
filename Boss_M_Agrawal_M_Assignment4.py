@@ -203,7 +203,7 @@ def status(sock, cmd, userName):
         output = f"User: {userObj.username} \nInfo: {userObj.info} \nBlocked User(s): {userObj.blocked} \n{userObj.status}\n"
         mySendAll(sock, output.encode())
     else:
-        output = f"User: {userObj.username} \nInfo: {userObj.info} \nBlocked User(s): {userObj.blocked} \n{userObj.status}\n"
+        output = f"User: {userObj.username} \nInfo: {userObj.info} \n{userObj.status}\n"
         mySendAll(sock, output.encode())
 
 # start room for a topic
