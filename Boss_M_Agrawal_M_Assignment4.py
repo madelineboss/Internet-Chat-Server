@@ -381,7 +381,8 @@ def say(sock, cmd, userName):
             mySendAll(sock, f"You are not in Room {roomNum}.\n".encode())
         else:
             for user in room.members:
-                if user in onlineUsers:
+                recipientObj = getUser(user)
+                if user in onlineUsers and userName not in recipientObj.blocked:
                     userSock = onlineUsers[user]
                     mySendAll(userSock, f"[Room {roomNum}] *{userName}*: {message}\n".encode())
 
@@ -449,7 +450,6 @@ def register(sock, cmd):
 
     userName = parts[1]
     password = parts[2]
-
 
     flag = findUser(userName) #check if username exists
     if flag == False: #if does not exist, create instance
